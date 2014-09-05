@@ -87,15 +87,41 @@ This test class provides also methods to retrieve information of DOM elements:
 
 The greatest advantage of TemplateTestCase class is the ability to simulate user behavior like click, type, mouse move and so on.
 
-The class provides the following methods:
+### Common methods
+
+The TemplateTestCase class provides the following methods:
 
 * `this.clickAndType(id, text, callback, blur)` : Calling this method will click on the element with id id, type the text in text, blur the field if blur is true (default value) and execute the callback after.
 
-clickAndType is convenient shortcut for a common user action, the implementation of this method use the utility class aria.utils.SynEvents that is a wrapper around syn, the Standalone Synthetic Event Library by bitovi and available as shortcut on this.synEvent.
+clickAndType is a convenient shortcut for a common user action, the implementation of this method uses the utility class aria.utils.SynEvents (or aria.jsunit.SynEvents) which is available as shortcut on this.synEvent.
 
-* `this.synEvent.click(element, callback)` : Emulates a click event on a specific DOM element, it'll also fire in the correct order the events mosedown, mousemove and mouseup.
-* `this.synEvent.move(options, from, callback)` : Emulates a mouse move from a given element from or a point in the screen to another point as described in options. It'll fire the eventsmouseover and mouseout as well as mouseenter and mouseleave on Internet Explorer.
-* `this.synEvent.type(element, text, callback)` : Emulates typing in a specific DOM element. It fires the events keydown, keypress and keyup on the given target.
+* `this.synEvent.click(element, callback)` : Emulates a click event on a specific DOM element, it'll also fire in the correct order the mousedown and mouseup events.
+* `this.synEvent.move(options, from, callback)` : Emulates a mouse move from a given element from or a point in the screen to another point as described in options. It'll fire the mouseover and mouseout events as well as mouseenter and mouseleave on Internet Explorer.
+* `this.synEvent.type(element, text, callback)` : Emulates typing in a specific DOM element. It fires the keydown, keypress and keyup events on the given target.
+
+### Different simulation levels
+
+The methods described in the previous section have two different implementations in Aria Templates:
+simulating user input events can be done either at the JavaScript level, or at the operating system level.
+
+The JavaScript level has the advantage of not requiring any special setup. When a test case extends aria.jsunit.TemplateTestCase,
+this.synEvent points to the aria.utils.SynEvents utility class which is a wrapper around syn, the Standalone Synthetic Event Library by bitovi,
+a library which simulates events at the JavaScript level. This library is quite complex and has to re-implement in JavaScript some features
+already present in the browser in order to reproduce as closely as possible the input events. It works well for many use cases, however,
+it is not always producing exactly the same results as if a user had done the same actions manually.
+
+Simulating events at the operating system level has the advantage of (nearly) always giving the same result as what the user would get
+when typing and moving the mouse, because the events implementation of the browser itself is directly reused,
+but it requires the browser executing the test to have been launched through a specific program:
+the [selenium-java-robot](https://github.com/ariatemplates/selenium-java-robot) for most browsers and [attester](attester.ariatemplates.com)
+in the case of [PhantomJS](http://phantomjs.org/). To use this simulation level, a test case should extend aria.jsunit.RobotTestCase (which
+itself extends aria.jsunit.TemplateTestCase). When a test extends RobotTestCase, this.synEvent points to the aria.jsunit.SynEvents utility class,
+which uses the aria.jsunit.Robot class to send low level events to the operating system.
+
+### Simulating events at the JavaScript level
+
+As explained in the previous section, events simulation at the JavaScript level is implemented in the aria.utils.SynEvents utility class,
+which is a wrapper around syn, the Standalone Synthetic Event Library by bitovi.
 
 It is recommended to use the shortcut `this.synEvent` over the full classpath because the shortcut fires the events
 in the correct environment, even when the test runs inside an iframe.
@@ -127,6 +153,11 @@ It can be used as well to simulate touch events.
 * `aria.utils.Delegate.delegate(event)` : Use the internal delegate mechanism to fire any event,
 even non-standard ones. Events can be created calling `aria.DomEvent.getFakeEvent(type, element)` and then adding properties on it.
 This is the lowest level API and only works for framework parts that rely on event delegation.
+
+### Simulating events at the operating system level
+
+To simulate events at the operating system level, the JavaScript entry point is the aria.jsunit.SynEvents class, which is available
+as a shortcut through this.synEvent in classes extending aria.jsunit.RobotTestCase.
 
 ## Examples
 
